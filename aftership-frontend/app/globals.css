@@ -1,0 +1,227 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-strong: var(--accent-strong);
+  --color-shadow-color: var(--shadow-color);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --forest: #172f29;
+  --cream: #fffbee;
+  --background: var(--cream);
+  --foreground: var(--forest);
+  --card: color-mix(in srgb, var(--cream) 97%, var(--forest));
+  --card-foreground: var(--forest);
+  --popover: var(--cream);
+  --popover-foreground: var(--forest);
+  --primary: var(--forest);
+  --primary-foreground: var(--cream);
+  --secondary: color-mix(in srgb, var(--cream) 90%, var(--forest));
+  --secondary-foreground: var(--forest);
+  --muted: color-mix(in srgb, var(--cream) 91%, var(--forest));
+  --muted-foreground: color-mix(in srgb, var(--forest) 80%, var(--cream));
+  --accent: color-mix(in srgb, var(--cream) 84%, var(--forest));
+  --accent-foreground: var(--forest);
+  --destructive: #a13232;
+  --border: color-mix(in srgb, var(--cream) 76%, var(--forest));
+  --input: color-mix(in srgb, var(--cream) 76%, var(--forest));
+  --ring: var(--forest);
+  --chart-1: var(--forest);
+  --chart-2: color-mix(in srgb, var(--forest) 82%, var(--cream));
+  --chart-3: color-mix(in srgb, var(--forest) 66%, var(--cream));
+  --chart-4: color-mix(in srgb, var(--forest) 50%, var(--cream));
+  --chart-5: color-mix(in srgb, var(--forest) 34%, var(--cream));
+  --radius: 0.75rem;
+  --surface-subtle: color-mix(in srgb, var(--cream) 94%, var(--forest));
+  --accent-soft: color-mix(in srgb, var(--cream) 86%, var(--forest));
+  --accent-strong: var(--forest);
+  --shadow-color: color-mix(in srgb, var(--forest) 42%, transparent);
+  --sidebar: var(--cream);
+  --sidebar-foreground: var(--forest);
+  --sidebar-primary: var(--forest);
+  --sidebar-primary-foreground: var(--cream);
+  --sidebar-accent: color-mix(in srgb, var(--cream) 86%, var(--forest));
+  --sidebar-accent-foreground: var(--forest);
+  --sidebar-border: color-mix(in srgb, var(--cream) 76%, var(--forest));
+  --sidebar-ring: var(--forest);
+}
+
+.dark {
+  --background: var(--forest);
+  --foreground: var(--cream);
+  --card: color-mix(in srgb, var(--forest) 94%, var(--cream));
+  --card-foreground: var(--cream);
+  --popover: var(--forest);
+  --popover-foreground: var(--cream);
+  --primary: var(--cream);
+  --primary-foreground: var(--forest);
+  --secondary: color-mix(in srgb, var(--forest) 88%, var(--cream));
+  --secondary-foreground: var(--cream);
+  --muted: color-mix(in srgb, var(--forest) 90%, var(--cream));
+  --muted-foreground: color-mix(in srgb, var(--cream) 80%, var(--forest));
+  --accent: color-mix(in srgb, var(--forest) 82%, var(--cream));
+  --accent-foreground: var(--cream);
+  --border: color-mix(in srgb, var(--forest) 76%, var(--cream));
+  --input: color-mix(in srgb, var(--forest) 76%, var(--cream));
+  --ring: var(--cream);
+  --surface-subtle: color-mix(in srgb, var(--forest) 96%, var(--cream));
+  --accent-soft: color-mix(in srgb, var(--forest) 84%, var(--cream));
+  --accent-strong: var(--cream);
+  --shadow-color: color-mix(in srgb, var(--forest) 68%, transparent);
+  --sidebar: var(--forest);
+  --sidebar-foreground: var(--cream);
+  --sidebar-primary: var(--cream);
+  --sidebar-primary-foreground: var(--forest);
+  --sidebar-accent: color-mix(in srgb, var(--forest) 84%, var(--cream));
+  --sidebar-accent-foreground: var(--cream);
+  --sidebar-border: color-mix(in srgb, var(--forest) 76%, var(--cream));
+  --sidebar-ring: var(--cream);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply scroll-smooth font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  ::selection {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+}
+
+.bg-hero-halo {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--forest) 18%, transparent),
+    transparent 68%
+  );
+}
+
+.dark .bg-hero-halo {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--cream) 12%, transparent),
+    transparent 68%
+  );
+}
+
+.bg-cta-pattern {
+  background-image:
+    radial-gradient(
+      circle at 85% 25%,
+      color-mix(in srgb, var(--background) 28%, transparent),
+      transparent 26%
+    ),
+    linear-gradient(
+      125deg,
+      transparent 45%,
+      color-mix(in srgb, var(--background) 8%, transparent)
+    );
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-copy {
+    animation: hero-enter 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .hero-visual {
+    animation: hero-enter 800ms 100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: section-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 10% cover 34%;
+    }
+  }
+}
+
+@keyframes hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes section-reveal {
+  from {
+    transform: translateY(1.5rem);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
