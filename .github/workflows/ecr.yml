@@ -108,13 +108,35 @@ jobs:
           ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
           HOST_PORT: ${{ vars.HOST_PORT }}
         run: |
-          [[ "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]
-          [[ "$AWS_REGION" =~ ^[a-z0-9-]+$ ]]
-          [[ "$CONTAINER_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]
-          [[ "$CONTAINER_PORT" =~ ^[0-9]{1,5}$ ]] && (( CONTAINER_PORT >= 1 && CONTAINER_PORT <= 65535 ))
-          [[ "$EC2_INSTANCE_ID" =~ ^i-[0-9a-f]{8}([0-9a-f]{9})?$ ]]
-          [[ "$ECR_REPOSITORY" =~ ^[a-z0-9][a-z0-9._/-]*$ ]]
-          [[ "$HOST_PORT" =~ ^[0-9]{1,5}$ ]] && (( HOST_PORT >= 1 && HOST_PORT <= 65535 ))
+          validate_match() {
+            local name="$1"
+            local value="$2"
+            local pattern="$3"
+
+            if [[ ! "$value" =~ $pattern ]]; then
+              echo "::error::Invalid ${name} (character count: ${#value}). Check its GitHub variable for missing values or hidden whitespace."
+              return 1
+            fi
+          }
+
+          validate_port() {
+            local name="$1"
+            local value="$2"
+
+            validate_match "$name" "$value" '^[0-9]{1,5}$'
+            if (( value < 1 || value > 65535 )); then
+              echo "::error::Invalid ${name}. Port must be between 1 and 65535."
+              return 1
+            fi
+          }
+
+          validate_match AWS_ACCOUNT_ID "$AWS_ACCOUNT_ID" '^[0-9]{12}$'
+          validate_match AWS_REGION "$AWS_REGION" '^[a-z0-9-]+$'
+          validate_match CONTAINER_NAME "$CONTAINER_NAME" '^[a-zA-Z0-9][a-zA-Z0-9_.-]*$'
+          validate_port CONTAINER_PORT "$CONTAINER_PORT"
+          validate_match EC2_INSTANCE_ID "$EC2_INSTANCE_ID" '^i-[0-9a-f]{8}([0-9a-f]{9})?$'
+          validate_match ECR_REPOSITORY "$ECR_REPOSITORY" '^[a-z0-9][a-z0-9._/-]*$'
+          validate_port HOST_PORT "$HOST_PORT"
 
       - name: Deploy image to EC2 with SSM
         env:
