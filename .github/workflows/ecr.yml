@@ -1,200 +1,178 @@
 name: Frontend CI and ECR
 
 on:
-  pull_request:
-    paths:
-      - "aftership-frontend/**"
-      - ".github/workflows/ecr.yml"
-  push:
-    branches:
-      - main
-    paths:
-      - "aftership-frontend/**"
-      - ".github/workflows/ecr.yml"
-  workflow_dispatch:
+    pull_request:
+        paths:
+            - "aftership-frontend/**"
+            - ".github/workflows/ecr.yml"
+    push:
+        branches:
+            - main
+        paths:
+            - "aftership-frontend/**"
+            - ".github/workflows/ecr.yml"
+    workflow_dispatch:
 
 permissions:
-  contents: read
+    contents: read
 
 concurrency:
-  group: frontend-ecr-${{ github.ref }}
-  cancel-in-progress: true
+    group: frontend-ecr-${{ github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  verify:
-    name: Verify frontend
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: aftership-frontend
+    verify:
+        name: Verify frontend
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        defaults:
+            run:
+                working-directory: aftership-frontend
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v7
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: aftership-frontend/package-lock.json
+            - name: Set up Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 22
+                  cache: npm
+                  cache-dependency-path: aftership-frontend/package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+            - name: Install dependencies
+              run: npm ci
 
-      - name: Lint
-        run: npm run lint
+            - name: Lint
+              run: npm run lint
 
-      - name: Type-check
-        run: npm run typecheck
+            - name: Type-check
+              run: npm run typecheck
 
-      - name: Build application
-        run: npm run build
+            - name: Build application
+              run: npm run build
 
-  publish:
-    name: Build and push image
-    if: github.event_name != 'pull_request'
-    needs: verify
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    environment: production
+    publish:
+        name: Build and push image
+        if: github.event_name != 'pull_request'
+        needs: verify
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        environment: production
 
-    permissions:
-      contents: read
-      id-token: write
+        permissions:
+            contents: read
+            id-token: write
 
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v7
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v7
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v6
+              with:
+                  role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+                  aws-region: ${{ vars.AWS_REGION }}
+                  allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
 
-      - name: Log in to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+            - name: Log in to Amazon ECR
+              id: ecr
+              uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v3
 
-      - name: Build and push image
-        id: image
-        uses: docker/build-push-action@v7
-        with:
-          context: ./aftership-frontend
-          file: ./aftership-frontend/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
+            - name: Build and push image
+              id: image
+              uses: docker/build-push-action@v7
+              with:
+                  context: ./aftership-frontend
+                  file: ./aftership-frontend/Dockerfile
+                  platforms: linux/amd64
+                  push: true
+                  tags: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+                  labels: |
+                      org.opencontainers.image.revision=${{ github.sha }}
+                      org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+                  cache-from: type=gha
+                  cache-to: type=gha,mode=max
+                  provenance: true
 
-      - name: Validate deployment configuration
-        env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
-          CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
-          CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
-          EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
-          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-          HOST_PORT: ${{ vars.HOST_PORT }}
-        run: |
-          validate_match() {
-            local name="$1"
-            local value="$2"
-            local pattern="$3"
+            - name: Validate deployment configuration
+              env:
+                  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+                  AWS_REGION: ${{ vars.AWS_REGION }}
+                  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+                  CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
+                  EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+                  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+                  HOST_PORT: ${{ vars.HOST_PORT }}
+              run: |
+                  [[ "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]]
+                  [[ "$AWS_REGION" =~ ^[a-z0-9-]+$ ]]
+                  [[ "$CONTAINER_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]]
+                  [[ "$CONTAINER_PORT" =~ ^[0-9]{1,5}$ ]] && (( CONTAINER_PORT >= 1 && CONTAINER_PORT <= 65535 ))
+                  [[ "$EC2_INSTANCE_ID" =~ ^i-[0-9a-f]{8}([0-9a-f]{9})?$ ]]
+                  [[ "$ECR_REPOSITORY" =~ ^[a-z0-9][a-z0-9._/-]*$ ]]
+                  [[ "$HOST_PORT" =~ ^[0-9]{1,5}$ ]] && (( HOST_PORT >= 1 && HOST_PORT <= 65535 ))
 
-            if [[ ! "$value" =~ $pattern ]]; then
-              echo "::error::Invalid ${name} (character count: ${#value}). Check its GitHub variable for missing values or hidden whitespace."
-              return 1
-            fi
-          }
+            - name: Deploy image to EC2 with SSM
+              env:
+                  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+                  AWS_REGION: ${{ vars.AWS_REGION }}
+                  CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
+                  CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
+                  EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+                  ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+                  HOST_PORT: ${{ vars.HOST_PORT }}
+                  IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+              run: |
+                  SCRIPT_PATH="/tmp/aftership-web-deploy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.sh"
+                  SCRIPT_BASE64="$(base64 -w 0 .github/scripts/deploy-ec2.sh)"
+                  REMOTE_COMMAND="echo ${SCRIPT_BASE64} | base64 --decode > ${SCRIPT_PATH} && chmod 700 ${SCRIPT_PATH} && ${SCRIPT_PATH} ${IMAGE_URI} ${CONTAINER_NAME} ${HOST_PORT} ${CONTAINER_PORT} ${AWS_REGION} ${AWS_ACCOUNT_ID}"
+                  PARAMETERS="$(jq -cn --arg command "$REMOTE_COMMAND" '{commands: [$command]}')"
 
-          validate_port() {
-            local name="$1"
-            local value="$2"
+                  COMMAND_ID="$(aws ssm send-command \
+                    --instance-ids "$EC2_INSTANCE_ID" \
+                    --document-name AWS-RunShellScript \
+                    --comment "Deploy aftership-web from GitHub run ${GITHUB_RUN_ID}" \
+                    --timeout-seconds 300 \
+                    --parameters "$PARAMETERS" \
+                    --query 'Command.CommandId' \
+                    --output text)"
 
-            validate_match "$name" "$value" '^[0-9]{1,5}$'
-            if (( value < 1 || value > 65535 )); then
-              echo "::error::Invalid ${name}. Port must be between 1 and 65535."
-              return 1
-            fi
-          }
+                  echo "SSM command: $COMMAND_ID"
+                  set +e
+                  aws ssm wait command-executed \
+                    --command-id "$COMMAND_ID" \
+                    --instance-id "$EC2_INSTANCE_ID"
+                  WAIT_EXIT=$?
+                  set -e
 
-          validate_match AWS_ACCOUNT_ID "$AWS_ACCOUNT_ID" '^[0-9]{12}$'
-          validate_match AWS_REGION "$AWS_REGION" '^[a-z0-9-]+$'
-          validate_match CONTAINER_NAME "$CONTAINER_NAME" '^[a-zA-Z0-9][a-zA-Z0-9_.-]*$'
-          validate_port CONTAINER_PORT "$CONTAINER_PORT"
-          validate_match EC2_INSTANCE_ID "$EC2_INSTANCE_ID" '^i-[0-9a-f]{8}([0-9a-f]{9})?$'
-          validate_match ECR_REPOSITORY "$ECR_REPOSITORY" '^[a-z0-9][a-z0-9._/-]*$'
-          validate_port HOST_PORT "$HOST_PORT"
+                  STATUS="$(aws ssm get-command-invocation \
+                    --command-id "$COMMAND_ID" \
+                    --instance-id "$EC2_INSTANCE_ID" \
+                    --query 'Status' \
+                    --output text)"
 
-      - name: Deploy image to EC2 with SSM
-        env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
-          CONTAINER_NAME: ${{ vars.CONTAINER_NAME }}
-          CONTAINER_PORT: ${{ vars.CONTAINER_PORT }}
-          EC2_INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
-          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-          HOST_PORT: ${{ vars.HOST_PORT }}
-          IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
-        run: |
-          SCRIPT_PATH="/tmp/aftership-web-deploy-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.sh"
-          SCRIPT_BASE64="$(base64 -w 0 .github/scripts/deploy-ec2.sh)"
-          REMOTE_COMMAND="echo ${SCRIPT_BASE64} | base64 --decode > ${SCRIPT_PATH} && chmod 700 ${SCRIPT_PATH} && ${SCRIPT_PATH} ${IMAGE_URI} ${CONTAINER_NAME} ${HOST_PORT} ${CONTAINER_PORT} ${AWS_REGION} ${AWS_ACCOUNT_ID}"
-          PARAMETERS="$(jq -cn --arg command "$REMOTE_COMMAND" '{commands: [$command]}')"
+                  aws ssm get-command-invocation \
+                    --command-id "$COMMAND_ID" \
+                    --instance-id "$EC2_INSTANCE_ID" \
+                    --query '{Status:Status,Output:StandardOutputContent,Errors:StandardErrorContent}' \
+                    --output json
 
-          COMMAND_ID="$(aws ssm send-command \
-            --instance-ids "$EC2_INSTANCE_ID" \
-            --document-name AWS-RunShellScript \
-            --comment "Deploy aftership-web from GitHub run ${GITHUB_RUN_ID}" \
-            --timeout-seconds 300 \
-            --parameters "$PARAMETERS" \
-            --query 'Command.CommandId' \
-            --output text)"
+                  if [[ "$WAIT_EXIT" -ne 0 || "$STATUS" != "Success" ]]; then
+                    exit 1
+                  fi
 
-          echo "SSM command: $COMMAND_ID"
-          set +e
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID"
-          WAIT_EXIT=$?
-          set -e
-
-          STATUS="$(aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID" \
-            --query 'Status' \
-            --output text)"
-
-          aws ssm get-command-invocation \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$EC2_INSTANCE_ID" \
-            --query '{Status:Status,Output:StandardOutputContent,Errors:StandardErrorContent}' \
-            --output json
-
-          if [[ "$WAIT_EXIT" -ne 0 || "$STATUS" != "Success" ]]; then
-            exit 1
-          fi
-
-      - name: Publish image summary
-        env:
-          IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
-          IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
-        run: |
-          echo "### Published frontend image" >> "$GITHUB_STEP_SUMMARY"
-          echo '```text' >> "$GITHUB_STEP_SUMMARY"
-          echo "$IMAGE_URI" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "Digest: \`$IMAGE_DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "Deployment target: \`${{ vars.EC2_INSTANCE_ID }}\`" >> "$GITHUB_STEP_SUMMARY"
+            - name: Publish image summary
+              env:
+                  IMAGE_URI: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:sha-${{ github.sha }}-run-${{ github.run_id }}-${{ github.run_attempt }}
+                  IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+              run: |
+                  echo "### Published frontend image" >> "$GITHUB_STEP_SUMMARY"
+                  echo '```text' >> "$GITHUB_STEP_SUMMARY"
+                  echo "$IMAGE_URI" >> "$GITHUB_STEP_SUMMARY"
+                  echo '```' >> "$GITHUB_STEP_SUMMARY"
+                  echo "Digest: \`$IMAGE_DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+                  echo "Deployment target: \`${{ vars.EC2_INSTANCE_ID }}\`" >> "$GITHUB_STEP_SUMMARY"
